@@ -62,13 +62,12 @@
     btn.disabled = true;
     btn.textContent = 'Verificando...';
 
-        var url = CONTROL_ACCESO_URL +
+    var url = CONTROL_ACCESO_URL +
       '?action=login' +
       '&usuario=' + encodeURIComponent(usuario) +
       '&password=' + encodeURIComponent(password);
 
     fetch(url, { method: 'GET', cache: 'no-store' })
-      .then(function (res) { return res.json(); })
       .then(function (res) { return res.json(); })
       .then(function (data) {
         btn.disabled = false;
