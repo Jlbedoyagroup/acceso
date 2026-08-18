@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iniciar sesión — JL Bedoya Group</title>
+<style>
+  body{font-family:system-ui,Arial,sans-serif;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+  .card{background:#1e293b;padding:2rem;border-radius:12px;width:100%;max-width:340px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+  h1{font-size:1.1rem;margin:0 0 1.25rem}
+  label{display:block;font-size:.85rem;margin-bottom:.25rem;color:#94a3b8}
+  input{width:100%;padding:.6rem;margin-bottom:1rem;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;box-sizing:border-box}
+  button{width:100%;padding:.7rem;border:none;border-radius:6px;background:#2563eb;color:#fff;font-weight:600;cursor:pointer}
+  button:disabled{opacity:.6;cursor:default}
+  .error{color:#f87171;font-size:.85rem;margin-bottom:1rem;min-height:1.2em}
+  .apps a{display:block;padding:.6rem;margin-bottom:.5rem;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;text-decoration:none}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>JL Bedoya Group — Acceso</h1>
+    <div id="loginView">
+      <div class="error" id="errorMsg"></div>
+      <label for="usuario">Usuario</label>
+      <input id="usuario" type="text" autocomplete="username">
+      <label for="password">Contraseña</label>
+      <input id="password" type="password" autocomplete="current-password">
+      <button id="btnLogin">Entrar</button>
+    </div>
+    <div id="appsView" class="apps" style="display:none">
+      <p>Selecciona una aplicación:</p>
+      <div id="appsList"></div>
+    </div>
+  </div>
+
+<script>
+  var CONTROL_ACCESO_URL = 'https://script.google.com/macros/s/AKfycby4K-qxW87hfd9Fy1wKHeyF8bic_Qo8clKfJ-ZuPg9zElNuc7XOe8qTgW8sUmJ9mnKjDA/exec';
+  var TOKEN_KEY = 'jlb_session_token';
+
+  var APP_URLS = {
+    PRODUCCION: 'https://jlbedoyagroup.github.io/Produccion/',
+    PRUEBAS: 'https://jlbedoyagroup.github.io/Produccion/VistaCampoPruebas.html',
+    ALMACEN: 'https://jlbedoyagroup.github.io/Almacen/'
+  };
+
+  function qs(name) {
+    return new URLSearchParams(location.search).get(name);
+  }
+
+  document.getElementById('btnLogin').addEventListener('click', function () {
+    var usuario = document.getElementById('usuario').value.trim();
+    var password = document.getElementById('password').value;
+    var errorEl = document.getElementById('errorMsg');
+    errorEl.textContent = '';
+
+    if (!usuario || !password) {
+      errorEl.textContent = 'Completa usuario y contraseña.';
+      return;
+    }
+
+    var btn = document.getElementById('btnLogin');
+    btn.disabled = true;
+    btn.textContent = 'Verificando...';
+
+    fetch(CONTROL_ACCESO_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'login', usuario: usuario, password: password })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
+
+        if (!data.ok) {
+          errorEl.textContent = mensajeError(data.error);
+          return;
+        }
+
+        try {
+          sessionStorage.setItem(TOKEN_KEY, data.token);
+        } catch (e) {
+          errorEl.textContent = 'El navegador bloqueó el almacenamiento de sesión.';
+          return;
+        }
+
+        var redirect = qs('redirect');
+        if (redirect) {
+          location.replace(redirect);
+          return;
+        }
+
+        mostrarSelectorApps(data.allowedApps);
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
+        errorEl.textContent = 'No se pudo contactar el servidor. Intenta de nuevo.';
+      });
+  });
+
+  function mensajeError(codigo) {
+    var mensajes = {
+      credenciales_invalidas: 'Usuario o contraseña incorrectos.',
+      usuario_inactivo: 'Este usuario está deshabilitado.',
+      servicio_suspendido: 'El servicio no está disponible actualmente.',
+      credenciales_incompletas: 'Completa usuario y contraseña.'
+    };
+    return mensajes[codigo] || 'No se pudo iniciar sesión.';
+  }
+
+  function mostrarSelectorApps(allowedApps) {
+    document.getElementById('loginView').style.display = 'none';
+    var appsView = document.getElementById('appsView');
+    var list = document.getElementById('appsList');
+    (allowedApps || []).forEach(function (app) {
+      var url = APP_URLS[app];
+      if (!url) return;
+      var a = document.createElement('a');
+      a.href = url;
+      a.textContent = app;
+      list.appendChild(a);
+    });
+    appsView.style.display = 'block';
+  }
+</script>
+</body>
+</html>
