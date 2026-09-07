@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestión de accesos — JL Bedoya Group</title>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  * { box-sizing: border-box; }
+  body{font-family:system-ui,Arial,sans-serif;background:#0f172a;color:#e2e8f0;margin:0;min-height:100vh}
+  .topbar{background:#1e293b;border-bottom:1px solid #334155;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+  .brand{display:flex;align-items:center;gap:8px}
+  .brand .jlb{color:#84cc16;font-weight:900;font-size:1.3rem}
+  .brand .titulo{color:#e2e8f0;font-weight:600;font-size:.95rem;border-left:1px solid #334155;padding-left:10px;margin-left:2px}
+  .btn-salir{display:flex;align-items:center;gap:6px;color:#94a3b8;text-decoration:none;font-size:.82rem;background:none;border:none;cursor:pointer;font-family:inherit}
+  .btn-salir:hover{color:#e2e8f0}
+  main{max-width:900px;margin:0 auto;padding:1.5rem}
+  .seccion{background:#1e293b;border:1px solid #334155;border-radius:14px;padding:1.5rem;margin-bottom:1.5rem}
+  .seccion h2{font-size:.95rem;margin:0 0 1.1rem;display:flex;align-items:center;gap:8px;color:#e2e8f0}
+  .seccion h2 i{width:18px;height:18px;color:#84cc16}
+  label{display:block;font-size:.78rem;font-weight:600;color:#94a3b8;margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.02em}
+  input[type=text],input[type=password]{width:100%;padding:.65rem .75rem;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:.9rem;outline:none}
+  input:focus{border-color:#84cc16}
+  .fila-form{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+  .checks{display:flex;gap:1.25rem;flex-wrap:wrap}
+  .check-item{display:flex;align-items:center;gap:6px;font-size:.85rem;color:#cbd5e1}
+  .check-item input{width:auto}
+  .btn{padding:.65rem 1.1rem;border-radius:8px;border:none;font-weight:700;font-size:.85rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .btn-primario{background:#84cc16;color:#0f172a}
+  .btn-primario:hover{background:#a3e635}
+  .btn-secundario{background:#334155;color:#e2e8f0}
+  .btn-secundario:hover{background:#475569}
+  .btn-peligro{background:#7f1d1d;color:#fecaca}
+  .btn-peligro:hover{background:#991b1b}
+  .btn-chico{padding:.4rem .7rem;font-size:.75rem;border-radius:6px}
+  .btn:disabled{opacity:.55;cursor:default}
+  .error{color:#f87171;font-size:.82rem;margin:.5rem 0}
+  .exito{color:#86efac;font-size:.82rem;margin:.5rem 0}
+  .lista-usuarios{display:flex;flex-direction:column;gap:.6rem}
+  .fila-usuario{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:.9rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+  .fila-usuario .info{flex:1;min-width:180px}
+  .fila-usuario .nombre{font-weight:700;font-size:.92rem;display:flex;align-items:center;gap:8px}
+  .fila-usuario .rol{color:#94a3b8;font-size:.78rem;margin-top:2px}
+  .badges{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.4rem}
+  .badge{font-size:.68rem;font-weight:700;padding:.15rem .5rem;border-radius:999px;text-transform:uppercase}
+  .badge-app{background:#1e293b;color:#94a3b8;border:1px solid #334155}
+  .badge-gestor{background:rgba(245,158,11,.18);color:#fbbf24}
+  .badge-activo{background:rgba(34,197,94,.15);color:#4ade80}
+  .badge-suspendido{background:rgba(239,68,68,.15);color:#f87171}
+  .acciones{display:flex;gap:.4rem;flex-wrap:wrap}
+  .vacio{color:#64748b;font-size:.85rem;text-align:center;padding:1.5rem 0}
+  .cargando{color:#64748b;font-size:.85rem;text-align:center;padding:1.5rem 0}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:50;padding:1rem}
+  .overlay[hidden]{display:none}
+  .modal{background:#1e293b;border:1px solid #334155;border-radius:14px;padding:1.5rem;width:100%;max-width:380px}
+  .modal h3{margin:0 0 1rem;font-size:.95rem}
+  .modal .campo{margin-bottom:1rem}
+  .toast{position:fixed;left:50%;bottom:1.5rem;transform:translateX(-50%) translateY(20px);background:#166534;color:#fff;padding:.7rem 1.25rem;border-radius:8px;font-size:.85rem;font-weight:600;box-shadow:0 8px 20px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:999}
+  .toast.mostrar{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.error{background:#7f1d1d}
+  #accesoDenegado{display:none;text-align:center;padding:3rem 1.5rem}
+  #accesoDenegado i{width:40px;height:40px;color:#f87171;margin-bottom:1rem}
+  #accesoDenegado a{color:#84cc16;text-decoration:none;font-weight:700}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand"><span class="jlb">JLB</span><span class="titulo">Gestión de accesos</span></div>
+    <button class="btn-salir" id="btnSalir"><i data-lucide="log-out" style="width:15px;height:15px"></i> Cerrar sesión</button>
+  </div>
+
+  <main id="app" style="display:none">
+    <div class="seccion">
+      <h2><i data-lucide="user-plus"></i> Crear nuevo usuario</h2>
+      <div class="fila-form">
+        <div>
+          <label>Usuario</label>
+          <input type="text" id="nu-usuario" placeholder="ej: bodega.ana">
+        </div>
+        <div>
+          <label>Contraseña inicial</label>
+          <input type="text" id="nu-password" placeholder="mínimo 8 caracteres">
+        </div>
+      </div>
+      <div class="fila-form">
+        <div>
+          <label>Rol / cargo</label>
+          <input type="text" id="nu-rol" placeholder="ej: Técnico de bodega">
+        </div>
+        <div>
+          <label>Módulos permitidos</label>
+          <div class="checks" id="nu-apps"></div>
+        </div>
+      </div>
+      <div class="error" id="nu-error"></div>
+      <button class="btn btn-primario" id="btnCrear"><i data-lucide="user-plus" style="width:16px;height:16px"></i> Crear usuario</button>
+    </div>
+
+    <div class="seccion">
+      <h2><i data-lucide="users-round"></i> Usuarios</h2>
+      <div id="listaUsuarios"><div class="cargando">Cargando usuarios...</div></div>
+    </div>
+  </main>
+
+  <div id="accesoDenegado">
+    <i data-lucide="shield-x"></i>
+    <p>No tienes permiso para ver esta página, o tu sesión expiró.</p>
+    <a href="login.html">Volver a iniciar sesión</a>
+  </div>
+
+  <div class="overlay" id="modalPassword" hidden>
+    <div class="modal">
+      <h3>Restablecer contraseña</h3>
+      <p style="color:#94a3b8;font-size:.82rem;margin:0 0 1rem" id="mp-usuario"></p>
+      <div class="campo">
+        <label>Nueva contraseña</label>
+        <input type="text" id="mp-password" placeholder="mínimo 8 caracteres">
+      </div>
+      <div class="error" id="mp-error"></div>
+      <div style="display:flex;gap:.6rem;justify-content:flex-end">
+        <button class="btn btn-secundario" id="mp-cancelar">Cancelar</button>
+        <button class="btn btn-primario" id="mp-confirmar">Restablecer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="modalEditar" hidden>
+    <div class="modal">
+      <h3>Editar accesos</h3>
+      <p style="color:#94a3b8;font-size:.82rem;margin:0 0 1rem" id="me-usuario"></p>
+      <div class="campo">
+        <label>Rol / cargo</label>
+        <input type="text" id="me-rol">
+      </div>
+      <div class="campo">
+        <label>Módulos permitidos</label>
+        <div class="checks" id="me-apps"></div>
+      </div>
+      <div class="error" id="me-error"></div>
+      <div style="display:flex;gap:.6rem;justify-content:flex-end">
+        <button class="btn btn-secundario" id="me-cancelar">Cancelar</button>
+        <button class="btn btn-primario" id="me-confirmar">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+<script>
+  var CONTROL_ACCESO_URL = 'https://script.google.com/macros/s/AKfycby4K-qxW87hfd9Fy1wKHeyF8bic_Qo8clKfJ-ZuPg9zElNuc7XOe8qTgW8sUmJ9mnKjDA/exec';
+  var TOKEN_KEY = 'jlb_session_token';
+  var APP_NOMBRES = { PRODUCCION: 'Producción', PRUEBAS: 'Campo de pruebas', ALMACEN: 'Almacén' };
+
+  var token = null;
+  var misApps = [];
+  var usuariosCache = [];
+
+  function getToken() {
+    try { return sessionStorage.getItem(TOKEN_KEY); } catch (e) { return null; }
+  }
+
+  function post(action, extra) {
+    var body = Object.assign({ action: action, token: token }, extra || {});
+    return fetch(CONTROL_ACCESO_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json(); });
+  }
+
+  function mostrarToast(texto, esError) {
+    var toast = document.getElementById('toast');
+    toast.textContent = texto;
+    toast.className = esError ? 'mostrar error' : 'mostrar';
+    setTimeout(function () { toast.className = toast.className.replace('mostrar', '').trim(); }, 2500);
+  }
+
+  function renderChecks(contenedorId, appsMarcadas) {
+    var cont = document.getElementById(contenedorId);
+    cont.innerHTML = '';
+    misApps.forEach(function (appId) {
+      var id = contenedorId + '-' + appId;
+      var label = document.createElement('label');
+      label.className = 'check-item';
+      var input = document.createElement('input');
+      input.type = 'checkbox';
+      input.value = appId;
+      input.id = id;
+      input.checked = (appsMarcadas || []).indexOf(appId) !== -1;
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(APP_NOMBRES[appId] || appId));
+      cont.appendChild(label);
+    });
+  }
+
+  function appsSeleccionadas(contenedorId) {
+    var cont = document.getElementById(contenedorId);
+    return Array.prototype.slice.call(cont.querySelectorAll('input:checked')).map(function (i) { return i.value; });
+  }
+
+  function cargarUsuarios() {
+    post('listUsers', { appId: 'ALL' }).then(function (data) {
+      if (!data.ok) {
+        document.getElementById('app').style.display = 'none';
+        document.getElementById('accesoDenegado').style.display = 'block';
+        return;
+      }
+      usuariosCache = data.users;
+      renderUsuarios();
+    }).catch(function () {
+      document.getElementById('listaUsuarios').innerHTML = '<div class="error">No se pudo contactar el servidor.</div>';
+    });
+  }
+
+  function renderUsuarios() {
+    var cont = document.getElementById('listaUsuarios');
+    if (usuariosCache.length === 0) {
+      cont.innerHTML = '<div class="vacio">Todavía no hay usuarios registrados.</div>';
+      return;
+    }
+    cont.innerHTML = '';
+    var lista = document.createElement('div');
+    lista.className = 'lista-usuarios';
+
+    usuariosCache.forEach(function (u) {
+      var fila = document.createElement('div');
+      fila.className = 'fila-usuario';
+
+      var info = document.createElement('div');
+      info.className = 'info';
+      var nombre = document.createElement('div');
+      nombre.className = 'nombre';
+      nombre.textContent = u.usuario;
+      if (u.esGestorAccesos) {
+        var badgeG = document.createElement('span');
+        badgeG.className = 'badge badge-gestor';
+        badgeG.textContent = 'Gestor';
+        nombre.appendChild(badgeG);
+      }
+      var rol = document.createElement('div');
+      rol.className = 'rol';
+      rol.textContent = u.rol;
+      var badges = document.createElement('div');
+      badges.className = 'badges';
+      (u.appsPermitidas || []).forEach(function (a) {
+        var b = document.createElement('span');
+        b.className = 'badge badge-app';
+        b.textContent = APP_NOMBRES[a] || a;
+        badges.appendChild(b);
+      });
+      var estadoBadge = document.createElement('span');
+      estadoBadge.className = 'badge ' + (u.activo ? 'badge-activo' : 'badge-suspendido');
+      estadoBadge.textContent = u.activo ? 'Activo' : 'Suspendido';
+      badges.appendChild(estadoBadge);
+
+      info.appendChild(nombre);
+      info.appendChild(rol);
+      info.appendChild(badges);
+
+      var acciones = document.createElement('div');
+      acciones.className = 'acciones';
+
+      var btnPass = document.createElement('button');
+      btnPass.className = 'btn btn-secundario btn-chico';
+      btnPass.innerHTML = '<i data-lucide="key-round" style="width:13px;height:13px"></i> Contraseña';
+      btnPass.addEventListener('click', function () { abrirModalPassword(u); });
+
+      var btnEditar = document.createElement('button');
+      btnEditar.className = 'btn btn-secundario btn-chico';
+      btnEditar.innerHTML = '<i data-lucide="pencil" style="width:13px;height:13px"></i> Editar';
+      btnEditar.addEventListener('click', function () { abrirModalEditar(u); });
+
+      var btnToggle = document.createElement('button');
+      btnToggle.className = 'btn btn-secundario btn-chico';
+      btnToggle.innerHTML = u.activo ? '<i data-lucide="ban" style="width:13px;height:13px"></i> Suspender' : '<i data-lucide="check-circle" style="width:13px;height:13px"></i> Activar';
+      btnToggle.addEventListener('click', function () { toggleActivo(u); });
+
+      acciones.appendChild(btnPass);
+      acciones.appendChild(btnEditar);
+      acciones.appendChild(btnToggle);
+
+      if (!u.esGestorAccesos) {
+        var btnBorrar = document.createElement('button');
+        btnBorrar.className = 'btn btn-peligro btn-chico';
+        btnBorrar.innerHTML = '<i data-lucide="trash-2" style="width:13px;height:13px"></i>';
+        btnBorrar.title = 'Eliminar (irreversible)';
+        btnBorrar.addEventListener('click', function () { borrarUsuario(u); });
+        acciones.appendChild(btnBorrar);
+      }
+
+      fila.appendChild(info);
+      fila.appendChild(acciones);
+      lista.appendChild(fila);
+    });
+
+    cont.appendChild(lista);
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  function primerAppComun(u) {
+    return (u.appsPermitidas || []).filter(function (a) { return misApps.indexOf(a) !== -1; })[0];
+  }
+
+  function toggleActivo(u) {
+    var appId = primerAppComun(u);
+    if (!appId) return;
+    post('setUserActive', { appId: appId, usuario: u.usuario, activo: !u.activo }).then(function (data) {
+      if (!data.ok) { mostrarToast('No se pudo cambiar el estado', true); return; }
+      u.activo = !u.activo;
+      renderUsuarios();
+      mostrarToast(u.usuario + (u.activo ? ' activado' : ' suspendido'));
+    });
+  }
+
+  function borrarUsuario(u) {
+    var appId = primerAppComun(u);
+    if (!appId) return;
+    if (!confirm('¿Eliminar a "' + u.usuario + '"? Esto no se puede deshacer.')) return;
+    post('deleteUser', { appId: appId, usuario: u.usuario }).then(function (data) {
+      if (!data.ok) { mostrarToast('No se pudo eliminar', true); return; }
+      usuariosCache = usuariosCache.filter(function (x) { return x.usuario !== u.usuario; });
+      renderUsuarios();
+      mostrarToast(u.usuario + ' eliminado');
+    });
+  }
+
+  var usuarioModalActual = null;
+
+  function abrirModalPassword(u) {
+    usuarioModalActual = u;
+    document.getElementById('mp-usuario').textContent = u.usuario;
+    document.getElementById('mp-password').value = '';
+    document.getElementById('mp-error').textContent = '';
+    document.getElementById('modalPassword').hidden = false;
+  }
+
+  document.getElementById('mp-cancelar').addEventListener('click', function () { document.getElementById('modalPassword').hidden = true; });
+  document.getElementById('mp-confirmar').addEventListener('click', function () {
+    var nueva = document.getElementById('mp-password').value;
+    var errorEl = document.getElementById('mp-error');
+    if (!nueva || nueva.length < 8) { errorEl.textContent = 'Mínimo 8 caracteres.'; return; }
+    var appId = primerAppComun(usuarioModalActual);
+    post('resetPassword', { appId: appId, usuario: usuarioModalActual.usuario, newPassword: nueva }).then(function (data) {
+      if (!data.ok) { errorEl.textContent = 'No se pudo restablecer.'; return; }
+      document.getElementById('modalPassword').hidden = true;
+      mostrarToast('Contraseña restablecida para ' + usuarioModalActual.usuario);
+    });
+  });
+
+  function abrirModalEditar(u) {
+    usuarioModalActual = u;
+    document.getElementById('me-usuario').textContent = u.usuario;
+    document.getElementById('me-rol').value = u.rol || '';
+    document.getElementById('me-error').textContent = '';
+    renderChecks('me-apps', u.appsPermitidas);
+    document.getElementById('modalEditar').hidden = false;
+  }
+
+  document.getElementById('me-cancelar').addEventListener('click', function () { document.getElementById('modalEditar').hidden = true; });
+  document.getElementById('me-confirmar').addEventListener('click', function () {
+    var rol = document.getElementById('me-rol').value.trim();
+    var apps = appsSeleccionadas('me-apps');
+    var errorEl = document.getElementById('me-error');
+    if (apps.length === 0) { errorEl.textContent = 'Selecciona al menos un módulo.'; return; }
+    var appId = primerAppComun(usuarioModalActual);
+    post('updateUserAccess', { appId: appId, usuario: usuarioModalActual.usuario, rol: rol, appsPermitidas: apps }).then(function (data) {
+      if (!data.ok) { errorEl.textContent = 'No se pudo guardar.'; return; }
+      usuarioModalActual.rol = rol;
+      usuarioModalActual.appsPermitidas = apps;
+      document.getElementById('modalEditar').hidden = true;
+      renderUsuarios();
+      mostrarToast('Accesos actualizados');
+    });
+  });
+
+  document.getElementById('btnCrear').addEventListener('click', function () {
+    var usuario = document.getElementById('nu-usuario').value.trim();
+    var password = document.getElementById('nu-password').value;
+    var rol = document.getElementById('nu-rol').value.trim();
+    var apps = appsSeleccionadas('nu-apps');
+    var errorEl = document.getElementById('nu-error');
+    errorEl.textContent = '';
+
+    if (!usuario || !password || !rol) { errorEl.textContent = 'Completa usuario, contraseña y rol.'; return; }
+    if (password.length < 8) { errorEl.textContent = 'La contraseña debe tener mínimo 8 caracteres.'; return; }
+    if (apps.length === 0) { errorEl.textContent = 'Selecciona al menos un módulo.'; return; }
+
+    var btn = document.getElementById('btnCrear');
+    btn.disabled = true;
+
+    post('createUser', { usuario: usuario, password: password, rol: rol, appsPermitidas: apps.join(',') }).then(function (data) {
+      btn.disabled = false;
+      if (!data.ok) {
+        errorEl.textContent = data.error === 'usuario_ya_existe' ? 'Ese usuario ya existe.' : 'No se pudo crear el usuario.';
+        return;
+      }
+      document.getElementById('nu-usuario').value = '';
+      document.getElementById('nu-password').value = '';
+      document.getElementById('nu-rol').value = '';
+      renderChecks('nu-apps', []);
+      mostrarToast('Usuario "' + usuario + '" creado');
+      cargarUsuarios();
+    });
+  });
+
+  document.getElementById('btnSalir').addEventListener('click', function () {
+    try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    location.href = 'login.html';
+  });
+
+  function iniciar() {
+    token = getToken();
+    if (!token) {
+      location.replace('login.html?redirect=' + encodeURIComponent(location.href));
+      return;
+    }
+
+    post('listUsers', { appId: 'ALL' }).then(function (data) {
+      if (!data.ok) {
+        document.getElementById('accesoDenegado').style.display = 'block';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        return;
+      }
+      var appsSet = {};
+      data.users.forEach(function (u) { (u.appsPermitidas || []).forEach(function (a) { appsSet[a] = true; }); });
+      misApps = Object.keys(APP_NOMBRES).filter(function (a) { return appsSet[a]; });
+      usuariosCache = data.users;
+
+      document.getElementById('app').style.display = 'block';
+      renderChecks('nu-apps', []);
+      renderUsuarios();
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }).catch(function () {
+      document.getElementById('accesoDenegado').style.display = 'block';
+    });
+  }
+
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  iniciar();
+</script>
+</body>
+</html>
