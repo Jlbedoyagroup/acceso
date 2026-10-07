@@ -179,6 +179,9 @@
   });
 
   function mensajeError(codigo) {
+    if (codigo === 'servicio_suspendido') {
+      location.replace('./suspendido.html');
+    }
     var mensajes = {
       credenciales_invalidas: 'Usuario o contraseña incorrectos.',
       usuario_inactivo: 'Este usuario está deshabilitado.',
