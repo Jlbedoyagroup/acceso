@@ -94,6 +94,13 @@
   var TOKEN_KEY = 'jlb_session_token';
   var USER_KEY = 'jlb_session_usuario';
 
+  // Si el servicio está suspendido, mostrar de una vez la pantalla de suspensión por falta
+  // de pago (sin pedir credenciales): la ven todos los roles que lleguen al login.
+  fetch(CONTROL_ACCESO_URL + '?action=estadoServicio', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { if (d && d.global === false) location.replace('./suspendido.html'); })
+    .catch(function () {});
+
   var APP_URLS = {
     PRODUCCION: 'https://jlbedoyagroup.github.io/Produccion/',
     PRUEBAS: 'https://jlbedoyagroup.github.io/Produccion/VistaCampoPruebas.html',
